@@ -173,6 +173,33 @@ function! DWM_ShrinkMaster()
   endif
 endfunction
 
+function DWM_InsertMainHere()
+  if winnr('$') == 1
+    return
+  endif
+  " If main is selected, just swap with the MRU
+  " at the top of the stack.
+  if winnr() == 1
+    2wincmd w
+  endif
+
+  " Re-order the windows so that main is inserted 
+  " into the selected spot. The window currently in 
+  " that spot will be pushed up the stack.
+  let l:curwin = winnr()
+  call DWM_Stack(1)
+  for i in range(1, l:curwin - 1)
+    execute i . 'wincmd w'
+    wincmd x
+  endfor
+  unlet l:curwin
+
+  " The top of the stack will become the new main
+  1wincmd w
+  wincmd H
+  call DWM_ApplyLayout()
+endfunction
+
 function DWM_SwapWithMain()
   if winnr('$') == 1
     return
@@ -230,7 +257,8 @@ endfunction
 
 nnoremap <silent> <Plug>DWMRotateCounterclockwise :call DWM_Rotate(0)<CR>
 nnoremap <silent> <Plug>DWMRotateClockwise        :call DWM_Rotate(1)<CR>
-nnoremap <silent> <Plug>DWMSwapWithMain        :call DWM_SwapWithMain()<CR>
+nnoremap <silent> <Plug>DWMSwapWithMain           :call DWM_SwapWithMain()<CR>
+nnoremap <silent> <Plug>DWMInsertMainHere         :call DWM_InsertMainHere()<CR>
 
 nnoremap <silent> <Plug>DWMNew   :call DWM_New()<CR>
 nnoremap <silent> <Plug>DWMClose :exec DWM_Close()<CR>
