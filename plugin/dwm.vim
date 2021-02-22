@@ -72,6 +72,7 @@ function! DWM_New()
   " Create a vertical split
   vert topleft new
   call DWM_ResizeMasterPaneWidth()
+  call DWM_MoveAllToolWIndows()
 endfunction
 
 " Move the current window to the master pane (the previous master window is
@@ -91,6 +92,7 @@ function! DWM_Focus()
   exec l:curwin . "wincmd w"
   wincmd H
   call DWM_ResizeMasterPaneWidth()
+  call DWM_MoveAllToolWIndows()
 endfunction
 
 " Handler for BufWinEnter autocommand
@@ -172,6 +174,48 @@ function! DWM_ShrinkMaster()
   endif
 endfunction
 
+function DWM_SwapWithMain()
+  if winnr('$') == 1
+    return
+  endif
+  if winnr() == 1
+    2wincmd w
+  endif
+
+  " re-order the windows so that main is swapped with the current window
+  let l:curwin = winnr()
+  call DWM_Stack(1)
+  execute l:curwin . 'wincmd w'
+  wincmd H
+  for i in range(2, l:curwin - 1)
+    execute i . 'wincmd w'
+    wincmd x
+  endfor
+  unlet l:curwin
+
+  " Re-apply the layout
+  1wincmd w
+  call DWM_ResizeMasterPaneWidth()
+  call DWM_MoveAllToolWIndows()
+endfunction
+
+function! DWM_MoveIfToolWindow()
+  if expand("%") =~ "term://" || &l:buftype == 'quickfix'
+    if winnr() != 1
+      wincmd J
+      resize 10
+    endif
+  endif
+endfunction
+
+function! DWM_MoveAllToolWIndows()
+  windo call DWM_MoveIfToolWindow()
+  if winnr() != 1
+    1wincmd w
+  endif
+endfunction
+
+
 function! DWM_Rotate(clockwise)
   call DWM_Stack(a:clockwise)
   if a:clockwise
@@ -181,10 +225,12 @@ function! DWM_Rotate(clockwise)
   endif
   wincmd H
   call DWM_ResizeMasterPaneWidth()
+  call DWM_MoveAllToolWIndows()
 endfunction
 
 nnoremap <silent> <Plug>DWMRotateCounterclockwise :call DWM_Rotate(0)<CR>
 nnoremap <silent> <Plug>DWMRotateClockwise        :call DWM_Rotate(1)<CR>
+nnoremap <silent> <Plug>DWMSwapWithMain        :call DWM_SwapWithMain()<CR>
 
 nnoremap <silent> <Plug>DWMNew   :call DWM_New()<CR>
 nnoremap <silent> <Plug>DWMClose :exec DWM_Close()<CR>
