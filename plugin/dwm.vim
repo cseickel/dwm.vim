@@ -82,13 +82,13 @@ function! DWM_Focus()
     return
   endif
 
-  if winnr() == 1
-    wincmd w
+  if winnr() != 1
+    let l:curwin = winnr()
+    let w:dwm_last_position = l:curwin
+    call DWM_Stack(1)
+    exec l:curwin . "wincmd w"
   endif
 
-  let l:curwin = winnr()
-  call DWM_Stack(1)
-  exec l:curwin . "wincmd w"
   wincmd H
   call DWM_ApplyLayout()
 endfunction
@@ -173,53 +173,43 @@ function! DWM_ShrinkMaster()
   endif
 endfunction
 
-function DWM_InsertMainHere()
+function DWM_MoveRight()
   if winnr('$') == 1
     return
   endif
-  " If main is selected, just swap with the MRU
-  " at the top of the stack.
-  if winnr() == 1
-    2wincmd w
+  let l:start_pos = winnr()
+  if l:start_pos == 1
+    " If main is selected, put it back in it's last position
+    " or just swap with the MRU at the top of the stack.
+    if exists('w:dwm_last_position')
+      let l:start_pos = w:dwm_last_position
+    else
+      let l:start_pos = 2
+    endif
+    let l:finalFocus = l:start_pos
+    call DWM_Stack(1)
+    for i in range(1, l:start_pos -1)
+      execute l:start_pos . 'wincmd w'
+      wincmd K
+    endfor
+  else
+    let w:dwm_last_position = l:start_pos
+    let l:finalFocus = 1
+    " First move the current main to the destination
+    call DWM_Stack(1)
+    for i in range(1, l:start_pos - 1)
+      execute i . 'wincmd w'
+      wincmd x
+    endfor  
   endif
 
-  " Re-order the windows so that main is inserted 
-  " into the selected spot. The window currently in 
-  " that spot will be pushed up the stack.
-  let l:curwin = winnr()
-  call DWM_Stack(1)
-  for i in range(1, l:curwin - 1)
-    execute i . 'wincmd w'
-    wincmd x
-  endfor
-  unlet l:curwin
-
-  " The top of the stack will become the new main
-  1wincmd w
+  " Focus the originally selected window, which should now be directly above
+  execute (l:start_pos -1) . 'wincmd w'
   wincmd H
   call DWM_ApplyLayout()
+  execute l:finalFocus . 'wincmd w'
 endfunction
 
-function DWM_SwapWithMain()
-  if winnr('$') == 1
-    return
-  endif
-  if winnr() == 1
-    2wincmd w
-  endif
-
-  " re-order the windows so that main is swapped with the current window
-  let l:curwin = winnr()
-  call DWM_Stack(1)
-  execute l:curwin . 'wincmd w'
-  wincmd H
-  for i in range(2, l:curwin - 1)
-    execute i . 'wincmd w'
-    wincmd x
-  endfor
-  unlet l:curwin
-  call DWM_ApplyLayout()
-endfunction
 
 function! DWM_ApplyLayout()
   1wincmd w
@@ -257,12 +247,14 @@ endfunction
 
 nnoremap <silent> <Plug>DWMRotateCounterclockwise :call DWM_Rotate(0)<CR>
 nnoremap <silent> <Plug>DWMRotateClockwise        :call DWM_Rotate(1)<CR>
-nnoremap <silent> <Plug>DWMSwapWithMain           :call DWM_SwapWithMain()<CR>
-nnoremap <silent> <Plug>DWMInsertMainHere         :call DWM_InsertMainHere()<CR>
+
+nnoremap <silent> <Plug>DWMFocus                  :call DWM_Focus()<CR>
+nnoremap <silent> <Plug>DWMMoveRight              :call DWM_MoveRight()<CR>
+nnoremap <silent> <Plug>DWMMoveDown               <C-W>x<C-w>j
+nnoremap <silent> <Plug>DWMMoveUp                 <C-W>k<C-w>x
 
 nnoremap <silent> <Plug>DWMNew   :call DWM_New()<CR>
 nnoremap <silent> <Plug>DWMClose :exec DWM_Close()<CR>
-nnoremap <silent> <Plug>DWMFocus :call DWM_Focus()<CR>
 
 nnoremap <silent> <Plug>DWMGrowMaster   :call DWM_GrowMaster()<CR>
 nnoremap <silent> <Plug>DWMShrinkMaster :call DWM_ShrinkMaster()<CR>
