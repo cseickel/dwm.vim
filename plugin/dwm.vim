@@ -103,6 +103,9 @@ function! DWM_AutoEnter()
   if exists('g:SessionLoad')
     return
   endif
+  if expand('%:t') =~ '.space-filler.'
+    return
+  endif
 
   " Skip buffers without filetype
   if !len(&l:filetype)
@@ -293,9 +296,9 @@ if g:dwm_map_keys
   endif
 endif
 
-if has('autocmd')
-  augroup dwm
-    au!
-    au BufWinEnter * if &l:buflisted || &l:filetype == 'help' | call DWM_AutoEnter() | endif
-  augroup end
-endif
+"if has('autocmd')
+"  augroup dwm
+"    au!
+"    au BufWinEnter * if &l:buflisted || &l:filetype == 'help' | call DWM_AutoEnter() | endif
+"  augroup end
+"endif
